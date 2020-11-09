@@ -1,0 +1,479 @@
+swagger: '2.0'
+info:
+  description: 
+    This is a Restaurant server. For authorization filters you can use JWT.
+  version: 1.0.0
+  title: Delilah Resto API
+  termsOfService: This is an API of free use.
+  contact:
+    email: marinacarracedo14@gmail.com
+schemes:
+  - http
+paths:
+  /login:
+    post:
+      summary: Logs user into the system
+      description: Logs user into the system, returns token with userId and tipoUsuario decoded
+      consumes:
+          - application/json
+      produces:
+          - application/json
+      parameters:
+          - name: login
+            in: body
+            required: true
+            schema:
+              type: object
+              required:
+                  - username
+                  - pwd
+              properties:
+                  username: 
+                      type: string
+                      example: Admin
+                  pwd:
+                      type: string
+                      example: Admin
+      responses:
+          "200":
+              description: token
+          "400":
+              description: Usuario o contraseña inválidos
+  /register:
+   post:
+     summary: Creates a new user
+     description: New users must have a unique username. Users tipoUsuario are by default 1 (Clients), and have no authorization to retrieve other users' information. Only Admin users can change tipoUsuario from client to admin 
+     consumes: 
+       - application/json
+     produces:
+       - string
+     parameters:
+       - in: body
+         name: usuarioObj
+         description: User object that needs to be added
+         required: true
+         schema:
+          type: object
+          required:
+              - username
+              - NombreApellido
+              - mail
+              - telefono
+              - direccion
+              - pwd    
+          properties:
+              username:
+                  type: string
+                  example: mcarracedo
+              NombreApellido:
+                  type: string
+              mail:
+                  type: string
+              telefono:
+                  type: integer
+                  format: int32
+              direccion:
+                  type: string
+              pwd:
+                  type: string
+     responses:
+      "200":
+          description: Nuevo cliente registrado
+  /usuarios:
+    get:
+      summary: Gets users
+      description: Use to request all users if the user is Admin. If the user is not admin, it gets only my user information.
+      produces:
+          - application/json
+      responses:
+          "200":
+              description: Lista de usuarios disponibles
+              schema:
+                  $ref: '#/definitions/Usuarios'
+          "201":
+              description: Token no proveída.
+          "404":
+              description: No hay usuarios todavía
+              schema:
+                  type: array
+                  items:
+                      $ref: '#/definitions/Usuarios'
+      security: [
+          {
+              access-token: []
+          }
+      ]
+  /usuarios/{id}:
+    put:
+      summary: It changes the type of user (Client / Admin)
+      description: Use to change the tipoUsuario value of the users. If tipoUsuario is 1, then the user is a Client, users with tipoUsuario 2 are Admins. Only Admins can access this point
+      consumes:
+          - multipart/form-data
+      produces:
+          - application/json
+      parameters:     
+          - name: id
+            in: path
+            description: Id of the user that needs to be updated
+            required: true
+            type: integer
+            format: int64
+          - name: body
+            in: body
+            description: 1 for Client users, 2 for Admin users
+            required: true
+            schema:
+              type: object
+              required:
+                  - tipoUsuario
+              properties:
+                  tipoUsuario:
+                      type: integer
+                      format: int64
+                      example: 2
+      responses:
+          "200":
+              description: Tipo de usuario actualizado.
+          "201":
+              description: Token no proveída.
+          "202":
+              description: No tiene permisos de Admin para modificar a este usuario.
+          "404":
+              description: El usuario no existe.
+      security: [
+          {
+              access-token:[]
+          }
+      ]
+  /productos:
+    get:
+      summary: Retrieves all products from the menu.
+      description: Users don´t need to be logged in to access the menu.
+      produces:
+        - application/json
+      responses:
+        "200":
+            description: Successful operation
+            schema:
+                type: array
+                items: 
+                    $ref: '#/definitions/Productos'
+        "203":
+            description: No hay productos todavía
+    post:
+      summary: Adds product to the menu
+      description: Only admin users can add products to the menu
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: Producto object that needs to be added to the menu
+          required: true
+          schema: 
+            $ref: '#/definitions/Productos'
+      responses:
+        "200":
+            description: Producto agregado al menu por Admin.
+        "201":
+            description: No token proveida.
+        "202":
+            description: No tiene permisos para agregar producto.
+      security: [
+        {
+            access-token: []
+        }
+    ]
+  /productos/{id}:
+    put:
+      summary: Modifies products from the menu
+      description: Only Admin users can access
+      consumes:
+          - application/json
+      produces:
+          - string
+      parameters:
+          - name: id
+            in: path
+            description: Id of the product that needs to be updated
+            required: true
+            type: integer
+          - in: body
+            name: producto
+            description: Product object that needs to be updated
+            required: true
+            schema:            
+              type: array
+              items:
+                $ref: '#/definitions/Productos'
+      responses:
+          "200":
+              description: Producto modificado
+          "201":
+              description: Token no proveída.
+          "202":
+              description: No tiene permisos de Admin para modificar este producto
+      security: [
+          {
+              access-token:[]
+          }
+      ]
+    delete:
+      summary: Eliminates a product from the menu
+      description: Only Admin users can delete products.
+      parameters: 
+          - name: id
+            in: path
+            description: Id of the product that needs to be deleted
+            required: true
+            type: integer
+            format: int64
+      responses: 
+          "200":
+              description: Producto eliminado.
+          "201": 
+              description: Token no proveída.
+          "202":
+              description: No tiene permisos de Admin para eliminar productos.
+      security: [
+          {
+              access-token: []
+          }
+      ] 
+  /pedidos:
+    post:
+     summary: Creates a new order
+     description: Users must be logged in. 
+     consumes: 
+       - application/json
+     produces:
+       - application/json
+     parameters:
+       - in: body
+         name: pedidoObj
+         description: Order that needs to be placed
+         required: true
+         schema:
+          type: object
+          required:
+              - descripcion
+              - formaPago
+              - pedidos
+          properties:
+            descripcion:
+              type: string
+              example: 2 x hamb
+            formaPago:
+              type: integer
+              description: 1 - Efectivo // 2 - Debito // 3 - Credito // 4 - Transferencia
+            pedidos:
+                type: array
+                items:
+                    $ref: '#/definitions/ProductosPorPedido'
+     responses:
+      "201":
+          description: Token no proveída.
+      "200":
+          description: Pedido generado (id) 
+    get:
+      summary: Gets orders
+      description: Use to request all orders if the user is Admin. If the user is not admin, it gets only my orders information.
+      produces:
+          - application/json
+      responses:
+          "200":
+              description: Lista de pedidos disponibles
+              schema:
+                  $ref: '#/definitions/Pedidos'
+          "201":
+              description: Token no proveída.
+          "404":
+              description: No hay pedidos todavía.
+              schema:
+                  type: array
+                  items:
+                      $ref: '#/definitions/Pedidos'
+      security: [
+          {
+              access-token: []
+          }
+      ]
+  /pedidos/{id}:
+    put:
+      summary: It changes the status of the order. 
+      description: It can only be managed by Admin users.
+      consumes:
+          - multipart/form-data
+      produces: 
+          - application/json
+      parameters:
+          - name: id
+            in: path
+            description: Id of the order that needs to be updated
+            required: true
+            type: integer
+          - name: estado
+            in: body
+            description: New order status (1, 'Nuevo'),(2, 'Confirmado'), (3, 'Preparando'), (4, 'Enviando'), (5, 'Entregado'), (6, 'Cancelado')
+            required: true
+            schema:
+              type: object
+              required:
+                  - estado
+              properties:
+                  estado:
+                      type: integer
+                      format: int64
+      responses:
+          "200":
+              description: Estado de pedido actualizado.
+          "201":
+              description: Token no proveída.
+          "202":
+              description: No tiene permisos de Admin para modificar estado del pedido.
+      security: [
+          {
+              access-token:[]
+          }
+      ]
+
+securityDefinitions:
+  access-token:
+      type: apiKey
+      name: access-token
+      in: header
+definitions:
+  Usuarios:
+      type: object
+      required:
+          - id
+          - username
+          - NombreApellido
+          - mail
+          - telefono
+          - direccion
+          - pwd
+          - tipoUsuario
+      properties:
+          id:
+              type: integer
+              format: int64
+          username:
+              type: string
+              example: Admin
+          NombreApellido:
+              type: string
+          mail:
+              type: string
+          telefono:
+              type: integer
+              format: int32
+          direccion:
+              type: string
+          pwd:
+              type: string
+              example: Admin
+          tipoUsuario:
+              $ref: '#/definitions/TipoUsuario'
+  TipoUsuario:
+      type: object
+      required:
+          - descripcion
+      properties:
+          id:
+              type: integer
+              format: int64
+              default: 1
+          description:
+              type: string
+              example: Client
+  Estados:
+      type: object
+      required:
+          - descripcion
+      properties:
+          id:
+              type: integer
+              format: int64
+          descripcion:
+              type: string
+              example: Nuevo
+  Productos:
+      type: object
+      required:
+          - nombre
+          - descripcion
+          - precio
+      properties:
+          id:
+              type: integer
+              format: int64
+          nombre:
+              type: string
+              example: hamburguesa
+          descripcion:
+              type: string
+              example: hamburguesa con lechuga y tomate
+          precio:
+              type: integer
+              format: int32
+          imagen:
+              type: string
+  FormaPago:
+      type: object
+      required:
+          - descripcion
+      properties:
+          id:
+              type: integer
+              format: int64
+          descripcion:
+              type: string
+              example: efectivo
+  Pedidos:
+      type: object
+      required:
+          - estado
+          - fecha
+          - descripcion
+          - formaPago
+          - usuario
+      properties:
+          id:
+              type: integer
+              format: int64
+          estado:
+              $ref: '#/definitions/Estados'
+          fecha:
+              type: object
+          descripcion:
+              type: string
+              example: 2 x hambur
+          formaPago:
+              $ref: '#/definitions/FormaPago'
+          usuario:
+              $ref: '#/definitions/Usuarios'
+  ProductosPorPedido:
+      type: object
+      required:
+          - productoId
+          - cantidad
+      properties:
+          productoId:
+              type: integer
+              format: int64
+          cantidad: 
+              type: integer
+              format: int32
+  ApiResponse:
+      type: object
+      properties:
+          code:
+              type: integer
+              format: int32
+          type:
+              type: string
+          message:
+              type: string
