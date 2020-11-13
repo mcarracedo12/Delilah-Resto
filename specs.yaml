@@ -381,7 +381,7 @@ paths:
             type: number
       responses:
           "200":
-              description: Pedido anulado por cliente.
+              description: Pedido anulado/cliente.
           "201":
               description: Por favor, inicie sesion.
           "404": 

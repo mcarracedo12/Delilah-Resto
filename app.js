@@ -810,7 +810,7 @@ app.delete("/pedidos/:id", rutasProtegidas, (req, res) => {
  *            type: number
  *      responses:
  *          "200":
- *              description: Pedido anulado por cliente.
+ *              description: Pedido anulado/cliente.
  *          "201":
  *              description: Por favor, inicie sesion.
  *          "404": 
@@ -835,7 +835,7 @@ app.put("/cancelar/pedidos/:id", rutasProtegidas, (req, res) => {
         else {
             connection.query(sql, error => {
                 if (error) throw error;
-                else { res.send("Pedido anulado por cliente."); }
+                else { res.send("Pedido anulado/cliente."); }
             });
         }
     }));
