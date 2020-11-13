@@ -91,7 +91,7 @@ paths:
               schema:
                   $ref: '#/definitions/Usuarios'
           "201":
-              description: Token no proveída.
+              description: Por favor, inicie sesion.
           "404":
               description: No hay usuarios todavía
               schema:
@@ -116,8 +116,7 @@ paths:
             in: path
             description: Id of the user that needs to be updated
             required: true
-            type: integer
-            format: int64
+            type: number
           - name: body
             in: body
             description: 1 for Client users, 2 for Admin users
@@ -135,7 +134,7 @@ paths:
           "200":
               description: Tipo de usuario actualizado.
           "201":
-              description: Token no proveída.
+              description: Por favor, inicie sesion.
           "202":
               description: No tiene permisos de Admin para modificar a este usuario.
           "404":
@@ -181,6 +180,8 @@ paths:
             description: No token proveida.
         "202":
             description: No tiene permisos para agregar producto.
+        "404":
+            description: El producto no existe.
       security: [
         {
             access-token: []
@@ -199,20 +200,19 @@ paths:
             in: path
             description: Id of the product that needs to be updated
             required: true
-            type: integer
+            type: number
           - in: body
             name: producto
             description: Product object that needs to be updated
             required: true
             schema:            
-              type: array
-              items:
-                $ref: '#/definitions/Productos'
+              type: object
+              $ref: '#/definitions/Productos'
       responses:
           "200":
               description: Producto modificado
           "201":
-              description: Token no proveída.
+              description: Por favor, inicie sesion.
           "202":
               description: No tiene permisos de Admin para modificar este producto
       security: [
@@ -228,13 +228,12 @@ paths:
             in: path
             description: Id of the product that needs to be deleted
             required: true
-            type: integer
-            format: int64
+            type: number
       responses: 
           "200":
               description: Producto eliminado.
           "201": 
-              description: Token no proveída.
+              description: Por favor, inicie sesion.
           "202":
               description: No tiene permisos de Admin para eliminar productos.
       security: [
@@ -274,9 +273,14 @@ paths:
                     $ref: '#/definitions/ProductosPorPedido'
      responses:
       "201":
-          description: Token no proveída.
+          description: Por favor, inicie sesion.
       "200":
           description: Pedido generado (id) 
+     security: [
+       {
+         access-token: []
+       }
+     ]
     get:
       summary: Gets orders
       description: Use to request all orders if the user is Admin. If the user is not admin, it gets only my orders information.
@@ -286,15 +290,13 @@ paths:
           "200":
               description: Lista de pedidos disponibles
               schema:
-                  $ref: '#/definitions/Pedidos'
+                  type: array
+                  items: 
+                    $ref: '#/definitions/Pedidos'
           "201":
-              description: Token no proveída.
+              description: Por favor, inicie sesion.
           "404":
               description: No hay pedidos todavía.
-              schema:
-                  type: array
-                  items:
-                      $ref: '#/definitions/Pedidos'
       security: [
           {
               access-token: []
@@ -313,7 +315,7 @@ paths:
             in: path
             description: Id of the order that needs to be updated
             required: true
-            type: integer
+            type: number
           - name: estado
             in: body
             description: New order status (1, 'Nuevo'),(2, 'Confirmado'), (3, 'Preparando'), (4, 'Enviando'), (5, 'Entregado'), (6, 'Cancelado')
@@ -330,7 +332,7 @@ paths:
           "200":
               description: Estado de pedido actualizado.
           "201":
-              description: Token no proveída.
+              description: Por favor, inicie sesion.
           "202":
               description: No tiene permisos de Admin para modificar estado del pedido.
       security: [
@@ -338,7 +340,57 @@ paths:
               access-token:[]
           }
       ]
-
+    delete:
+      summary: Eliminates an order
+      description: Orders cannot be deleted.
+      parameters: 
+          - name: id
+            in: path
+            description: Id of the order that needs to be deleted
+            required: true
+            type: number
+      responses: 
+          "200":
+              description: Pedido eliminado.
+          "201": 
+              description: Por favor, inicie sesion.
+          "202":
+              description: No tiene permisos de Admin para eliminar pedidos.
+          "400":
+              description: No se puede eliminar el pedido.
+          "404":
+              description: El pedido no existe.
+      security: [
+          {
+              access-token: []
+          }
+      ] 
+  /cancelar/pedidos/{id}:
+    put:
+      summary: Cancel order
+      description: It changes the status of the order to cancelled by user (7). 
+      consumes:
+          - multipart/form-data
+      produces: 
+          - application/json
+      parameters:
+          - name: id
+            in: path
+            description: Id of the order that needs to be updated
+            required: true
+            type: number
+      responses:
+          "200":
+              description: Pedido anulado por cliente.
+          "201":
+              description: Por favor, inicie sesion.
+          "404": 
+              description: El pedido no existe
+      security: [
+          {
+              access-token:[]
+          }
+      ]
 securityDefinitions:
   access-token:
       type: apiKey

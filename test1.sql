@@ -15,7 +15,8 @@ VALUES(1, 'Nuevo'),
 (3, 'Preparando'),
 (4, 'Enviando'),
 (5, 'Entregado'),
-(6, 'Cancelado');
+(6, 'Cancelado'),
+(7, 'Anulado por cliente');
 
 CREATE TABLE DelilahResto.TipoUsuario(
     Id INT(4) UNSIGNED PRIMARY KEY AUTO_INCREMENT,

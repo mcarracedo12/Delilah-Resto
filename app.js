@@ -20,7 +20,7 @@ const connection = mysql.createConnection({
 
 connection.connect(error => {
     if (error) throw error;
-    console.log("Connection to database 'DelilahResto' running");
+    console.log(`Connection to database 'DelilahResto' running. You can go to http://localhost:${port}/api-docs/ to try with Swagger`);
 });
 
 const port = process.env.PORT || 3000;
@@ -126,7 +126,7 @@ rutasProtegidas.use((req, res, next) => {
             }
         });
     } else {
-        res.status("201").send('Token no proveída.');
+        res.status("201").send('Por favor, inicie sesion.');
     }
 });
 
@@ -173,7 +173,6 @@ rutasProtegidas.use((req, res, next) => {
  *                  type: string
  *              pwd:
  *                  type: string
- *              tipoUsuario:
  *     responses:
  *      "200":
  *          description: Nuevo cliente registrado
@@ -214,7 +213,7 @@ app.post("/register", (req, res) => {
  *              schema:
  *                  $ref: '#/definitions/Usuarios'
  *          "201":
- *              description: Token no proveída.
+ *              description: Por favor, inicie sesion.
  *          "404":
  *              description: No hay usuarios todavía
  *              schema:
@@ -264,8 +263,7 @@ app.get('/usuarios', rutasProtegidas, (req, res) => {
  *            in: path
  *            description: Id of the user that needs to be updated
  *            required: true
- *            type: integer
- *            format: int64
+ *            type: number
  *          - name: body
  *            in: body
  *            description: 1 for Client users, 2 for Admin users
@@ -283,7 +281,7 @@ app.get('/usuarios', rutasProtegidas, (req, res) => {
  *          "200":
  *              description: Tipo de usuario actualizado.
  *          "201":
- *              description: Token no proveída.
+ *              description: Por favor, inicie sesion.
  *          "202":
  *              description: No tiene permisos de Admin para modificar a este usuario.
  *          "404":
@@ -294,9 +292,6 @@ app.get('/usuarios', rutasProtegidas, (req, res) => {
  *          }
  *      ]
  */
-
-// En postman funciona bien, pero en swagger me dice que no existe el usuario
-
 app.put("/usuarios/:id", rutasProtegidas, (req, res) => {
     if (req.headers['tipoUsuario'] != 2) {
         res.status("202").send("No tiene permisos de Admin para modificar a este usuario.");
@@ -320,70 +315,6 @@ WHERE id = '${id}'`;
             }
         }));
     }
-}
-);
-
-
-/**
- * @swagger
- * /productos/{id}:
- *  put:
- *      summary: Modifies products from the menu
- *      description: Only Admin users can access
- *      consumes:
- *          - application/json
- *      produces:
- *          - string
- *      parameters:
- *          - name: id
- *            in: path
- *            description: Id of the product that needs to be updated
- *            required: true
- *            type: integer
- *          - in: body
- *            name: producto
- *            description: Product object that needs to be updated
- *            required: true
- *            schema:            
- *              type: object
- *              $ref: '#/definitions/Productos'
- *      responses:
- *          "200":
- *              description: Producto modificado
- *          "201":
- *              description: Token no proveída.
- *          "202":
- *              description: No tiene permisos de Admin para modificar este producto
- *      security: [
- *          {
- *              access-token:[]
- *          }
- *      ]
- */
-app.put("/productos/:id", rutasProtegidas, (req, res) => {
-    if (req.headers['tipoUsuario'] != 2) {
-        res.status(202).send("No tiene permisos de Admin para modificar este producto");
-    }
-    let { id } = req.params;
-    let nombre = req.body.nombre;
-    let descripcion = req.body.descripcion;
-    let precio = req.body.precio;
-    let sql = `UPDATE productos SET nombre = '${nombre}', descripcion = '${descripcion}', precio ='${precio}'
-WHERE id = '${id}'`;
-    let sql1 = `SELECT * FROM productos WHERE Id = '${id}'`;
-    if (connection.query(sql1, (error, resp) => {
-        if (error) {res.send(error)}
-        if (resp.length !== 1) {
-            res.status(404).send("El producto no existe");
-        }
-        else {
-            connection.query(sql, err => {
-                if (err){res.send(err)}
-                else {res.send("Producto modificado"); }
-            });
-        }
-    }));
-
 }
 );
 
@@ -468,6 +399,74 @@ app.post("/productos", rutasProtegidas, (req, res) => {
     }
 });
 
+
+/**
+ * @swagger
+ * /productos/{id}:
+ *  put:
+ *      summary: Modifies products from the menu
+ *      description: Only Admin users can access
+ *      consumes:
+ *          - application/json
+ *      produces:
+ *          - string
+ *      parameters:
+ *          - name: id
+ *            in: path
+ *            description: Id of the product that needs to be updated
+ *            required: true
+ *            type: number
+ *          - in: body
+ *            name: producto
+ *            description: Product object that needs to be updated
+ *            required: true
+ *            schema:            
+ *              type: object
+ *              $ref: '#/definitions/Productos'
+ *      responses:
+ *          "200":
+ *              description: Producto modificado
+ *          "201":
+ *              description: Por favor, inicie sesion.
+ *          "202":
+ *              description: No tiene permisos de Admin para modificar este producto
+ *      security: [
+ *          {
+ *              access-token:[]
+ *          }
+ *      ]
+ */
+app.put("/productos/:id", rutasProtegidas, (req, res) => {
+    if (req.headers['tipoUsuario'] != 2) {
+        res.status(202).send("No tiene permisos de Admin para modificar este producto");
+    }
+    let { id } = req.params;
+    let nombre = req.body.nombre;
+    let descripcion = req.body.descripcion;
+    let precio = req.body.precio;
+    let sql = `UPDATE productos SET nombre = '${nombre}', descripcion = '${descripcion}', precio ='${precio}'
+WHERE id = '${id}'`;
+    let sql1 = `SELECT * FROM productos WHERE Id = '${id}'`;
+
+    if (connection.query(sql1, (error, resp) => {
+        if (error) { res.send(error) }
+        if (resp.length !== 1) {
+            res.status(404).send("El producto no existe");
+        }
+        else {
+
+            connection.query(sql, err => {
+                if (err) { res.send(err) }
+                else { res.send("Producto modificado"); }
+            });
+
+        }
+    }));
+
+}
+);
+
+
 /**
  * @swagger
  * /productos/{id}:
@@ -475,23 +474,20 @@ app.post("/productos", rutasProtegidas, (req, res) => {
  *      summary: Eliminates a product from the menu
  *      description: Only Admin users can delete products.
  *      parameters: 
- *          - name: access-token
- *            in: headers
- *            required: true
- *            type: string
  *          - name: id
  *            in: path
  *            description: Id of the product that needs to be deleted
  *            required: true
- *            type: integer
- *            format: int64
+ *            type: number
  *      responses: 
  *          "200":
  *              description: Producto eliminado.
  *          "201": 
- *              description: Token no proveída.
+ *              description: Por favor, inicie sesion.
  *          "202":
  *              description: No tiene permisos de Admin para eliminar productos.
+ *          "404": 
+ *              description: El producto no existe.
  *      security: [
  *          {
  *              access-token: []
@@ -508,10 +504,9 @@ app.delete("/productos/:id", rutasProtegidas, (req, res) => {
     if (connection.query(sql1, (error, resp) => {
         if (error) throw error
         if (resp.length !== 1) {
-            res.status(404).send("El producto no existe");
+            res.status(404).send("El producto no existe.");
         }
         else {
-
 
             connection.query(sql, err => {
                 if (err) {
@@ -527,124 +522,6 @@ app.delete("/productos/:id", rutasProtegidas, (req, res) => {
 
 }
 );
-
-/**
- * @swagger
- * /pedidos:
- *  get:
- *      summary: Gets orders
- *      description: Use to request all orders if the user is Admin. If the user is not admin, it gets only my order information.
- *      produces:
- *          - application/json
- *      consumes: 
- *          - access-token:
- *              in: headers
- *              name: access-token
- *              type: apiKey
- *      responses:
- *          "200":
- *              description: Lista de pedidos disponibles
- *              schema:
- *                  $ref: '#/definitions/Pedidos'
- *          "201":
- *              description: Token no proveída.
- *          "404":
- *              description: No hay pedidos todavía.
- *              schema:
- *                  type: array
- *                  items:
- *                      $ref: '#/definitions/Pedidos'
- *      security: [
- *          {
- *              access-token: []
- *          }
- *      ]
- */
-app.get("/pedidos", rutasProtegidas, (req, res) => {
-    if (req.headers['tipoUsuario'] != 2) {
-        let userId = req.headers['userId'];
-        let sql = `SELECT pedidos.*,  productosPorPedidos.* FROM pedidos LEFT JOIN productosPorPedidos ON productosPorPedidos.pedidoId = pedidos.Id WHERE usuario = "${userId}"`;
-        connection.query(sql, (error, results) => {
-            if (error) throw error;
-            if (results.length > 0) {
-                res.json(results);
-            }
-            else {
-                res.status(404).send("No hay pedidos todavia.");
-            }
-        });
-    }
-    else {
-        let sql = `SELECT pedidos.*,  productosPorPedidos.* FROM pedidos LEFT JOIN productosPorPedidos ON productosPorPedidos.pedidoId = pedidos.Id`;
-        connection.query(sql, (error, results) => {
-            if (error) throw error;
-            if (results.length > 0) {
-                res.json(results);
-            }
-            else {
-                res.status(404).send("No hay pedidos todavia.");
-            }
-        });
-    }
-})
-
-// Actualizar estado de pedido (solo admins)
-/**
- * @swagger
- * /pedidos/{id}:
- *  put:
- *      summary: It changes the status of the order. 
- *      description: It can only be managed by Admin users.
- *      consumes:
- *          - multipart/form-data
- *      produces: 
- *          - application/json
- *      parameters:
- *          - name: id
- *            in: path
- *            description: Id of the order that needs to be updated
- *            required: true
- *            type: integer
- *          - name: estado
- *            in: body
- *            description: New order status (1, 'Nuevo'),(2, 'Confirmado'), (3, 'Preparando'), (4, 'Enviando'), (5, 'Entregado'), (6, 'Cancelado')
- *            required: true
- *            schema:
- *              type: object
- *              required:
- *                  - estado
- *              properties:
- *                  estado:
- *                      type: integer
- *                      format: int64
- *      responses:
- *          "200":
- *              description: Estado de pedido actualizado.
- *          "201":
- *              description: Token no proveída.
- *          "202":
- *              description: No tiene permisos de Admin para modificar estado del pedido.
- *      security: [
- *          {
- *              access-token:[]
- *          }
- *      ]
- */
-app.put("/pedidos/:id", rutasProtegidas, (req, res) => {
-    if (req.headers['tipoUsuario'] != 2) {
-        res.status(202).send("No tiene permisos de Admin para modificar estado del pedido.");
-    }
-    else {
-        let { id } = req.params;
-        let estado = req.body.estado;
-        let sql = `UPDATE pedidos SET estado = '${estado}'
-WHERE id = '${id}'`;
-        connection.query(sql, error => {
-            if (error) throw error;
-            else { res.send("Estado de pedido actualizado."); }
-        });
-    }
-});
 
 
 /**
@@ -682,7 +559,7 @@ WHERE id = '${id}'`;
  *                      $ref: '#/definitions/ProductosPorPedido'
  *     responses:
  *      "201":
- *          description: Token no proveída.
+ *          description: Por favor, inicie sesion.
  *      "200":
  *          description: Pedido generado (id) 
  *     security: [
@@ -735,6 +612,236 @@ app.post("/pedidos", rutasProtegidas, (req, res) => {
 });
 
 
+
+
+/**
+ * @swagger
+ * /pedidos:
+ *  get:
+ *      summary: Gets orders
+ *      description: Use to request all orders if the user is Admin. If the user is not admin, it gets only my order information.
+ *      produces:
+ *          - application/json
+ *      responses:
+ *          "200":
+ *              description: Lista de pedidos disponibles
+ *              schema:
+ *                  type: array
+ *                  items:
+ *                      $ref: '#/definitions/Pedidos'
+ *          "201":
+ *              description: Por favor, inicie sesion.
+ *          "404":
+ *              description: No hay pedidos todavía.
+ *      security: [
+ *          {
+ *              access-token: []
+ *          }
+ *      ]
+ */
+app.get("/pedidos", rutasProtegidas, (req, res) => {
+    if (req.headers['tipoUsuario'] != 2) {
+        let userId = req.headers['userId'];
+        let sql = `SELECT pedidos.*,  productosPorPedidos.* FROM pedidos LEFT JOIN productosPorPedidos ON productosPorPedidos.pedidoId = pedidos.Id WHERE usuario = "${userId}"`;
+        connection.query(sql, (error, results) => {
+            if (error) throw error;
+            if (results.length > 0) {
+                res.json(results);
+            }
+            else {
+                res.status(404).send("No hay pedidos todavia.");
+            }
+        });
+    }
+    else {
+        let sql = `SELECT pedidos.*,  productosPorPedidos.* FROM pedidos LEFT JOIN productosPorPedidos ON productosPorPedidos.pedidoId = pedidos.Id`;
+        connection.query(sql, (error, results) => {
+            if (error) throw error;
+            if (results.length > 0) {
+                res.json(results);
+            }
+            else {
+                res.status(404).send("No hay pedidos todavia.");
+            }
+        });
+    }
+})
+
+/**
+ * @swagger
+ * /pedidos/{id}:
+ *  put:
+ *      summary: It changes the status of the order. 
+ *      description: It can only be managed by Admin users.
+ *      consumes:
+ *          - multipart/form-data
+ *      produces: 
+ *          - application/json
+ *      parameters:
+ *          - name: id
+ *            in: path
+ *            description: Id of the order that needs to be updated
+ *            required: true
+ *            type: number
+ *          - name: estado
+ *            in: body
+ *            description: New order status (1, 'Nuevo'),(2, 'Confirmado'), (3, 'Preparando'), (4, 'Enviando'), (5, 'Entregado'), (6, 'Cancelado')
+ *            required: true
+ *            schema:
+ *              type: object
+ *              required:
+ *                  - estado
+ *              properties:
+ *                  estado:
+ *                      type: integer
+ *                      format: int64
+ *      responses:
+ *          "200":
+ *              description: Estado de pedido actualizado.
+ *          "201":
+ *              description: Por favor, inicie sesion.
+ *          "202":
+ *              description: No tiene permisos de Admin para modificar estado del pedido.
+ *          "404": 
+ *              description: El pedido no existe
+ *      security: [
+ *          {
+ *              access-token:[]
+ *          }
+ *      ]
+ */
+app.put("/pedidos/:id", rutasProtegidas, (req, res) => {
+    if (req.headers['tipoUsuario'] != 2) {
+        res.status(202).send("No tiene permisos de Admin para modificar estado del pedido.");
+    }
+    let { id } = req.params;
+    let estado = req.body.estado;
+    let sql = `UPDATE pedidos SET estado = '${estado}' WHERE id = '${id}'`;
+    let sql1 = `SELECT * FROM pedidos WHERE Id = '${id}'`;
+    if (connection.query(sql1, (error, resp) => {
+        if (error) { res.send(error) }
+        if (resp.length !== 1) {
+            res.status(404).send("El pedido no existe");
+        }
+        else {
+            connection.query(sql, error => {
+                if (error) throw error;
+                else { res.send("Estado de pedido actualizado."); }
+            });
+        }
+    }));
+}
+);
+
+
+/**
+ * @swagger
+ * /pedidos/{id}:
+ *  delete:
+ *      summary: Eliminates an order
+ *      description: Orders cannot be deleted.
+ *      parameters: 
+ *          - name: id
+ *            in: path
+ *            description: Id of the order that needs to be deleted
+ *            required: true
+ *            type: number
+ *      responses: 
+ *          "200":
+ *              description: Pedido eliminado.
+ *          "201": 
+ *              description: Por favor, inicie sesion.
+ *          "202":
+ *              description: No tiene permisos de Admin para eliminar pedidos.
+ *          "400": 
+ *              description: No se puede eliminar el pedido.
+ *          "404":
+ *              description: El pedido no existe.
+ *      security: [
+ *          {
+ *              access-token: []
+ *          }
+ *      ] 
+ */
+app.delete("/pedidos/:id", rutasProtegidas, (req, res) => {
+    if (req.headers['tipoUsuario'] != 2) {
+        res.status(202).send("No tiene permisos de Admin para eliminar pedidos.")
+    }
+    let { id } = req.params;
+    let sql1 = `SELECT * FROM pedidos WHERE Id = '${id}'`;
+    let sql = `DELETE FROM pedidos WHERE Id = '${id}'`;
+    if (connection.query(sql1, (error, resp) => {
+        if (error) throw error
+        if (resp.length !== 1) {
+            res.status(404).send("El pedido no existe.");
+        }
+        else {
+            connection.query(sql, err => {
+                if (err) {
+                    res.status(400).send("No se puede eliminar el pedido.");
+                }
+                else {
+                    res.send("Pedido eliminado");
+                }
+            }
+            );
+        }
+    }
+    ));
+}
+);
+
+
+/**
+ * @swagger
+ * /cancelar/pedidos/{id}:
+ *  put:
+ *      summary: Cancel order
+ *      description: It changes the status of the order to cancelled by user (7). 
+ *      consumes:
+ *          - multipart/form-data
+ *      produces: 
+ *          - application/json
+ *      parameters:
+ *          - name: id
+ *            in: path
+ *            description: Id of the order that needs to be updated
+ *            required: true
+ *            type: number
+ *      responses:
+ *          "200":
+ *              description: Pedido anulado por cliente.
+ *          "201":
+ *              description: Por favor, inicie sesion.
+ *          "404": 
+ *              description: El pedido no existe
+ *      security: [
+ *          {
+ *              access-token:[]
+ *          }
+ *      ]
+ */
+
+
+app.put("/cancelar/pedidos/:id", rutasProtegidas, (req, res) => {
+    let { id } = req.params;
+    let sql = `UPDATE pedidos SET estado = '7' WHERE id = '${id}'`;
+    let sql1 = `SELECT * FROM pedidos WHERE Id = '${id}'`;
+    if (connection.query(sql1, (error, resp) => {
+        if (error) { res.send(error) }
+        if (resp.length !== 1) {
+            res.status(404).send("El pedido no existe");
+        }
+        else {
+            connection.query(sql, error => {
+                if (error) throw error;
+                else { res.send("Pedido anulado por cliente."); }
+            });
+        }
+    }));
+}
+);
+
 /**
  * @swagger
  * securityDefinitions:
@@ -771,7 +878,7 @@ app.post("/pedidos", rutasProtegidas, (req, res) => {
  *          direccion:
  *              type: string
  *          pwd:
- *              type: password
+ *              type: string
  *              example: Admin
  *          tipoUsuario:
  *              $ref: '#/definitions/TipoUsuario'
@@ -845,7 +952,7 @@ app.post("/pedidos", rutasProtegidas, (req, res) => {
  *          estado:
  *              $ref: '#/definitions/Estados'
  *          fecha:
- *              type: date
+ *              type: object
  *          descripcion:
  *              type: string
  *              example: 2 x hambur
@@ -862,7 +969,7 @@ app.post("/pedidos", rutasProtegidas, (req, res) => {
  *          productoId:
  *              type: integer
  *              format: int64
- *          cantidad: 
+ *          cantidad:
  *              type: integer
  *              format: int32
  *  ApiResponse:
