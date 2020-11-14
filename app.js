@@ -794,7 +794,7 @@ app.delete("/pedidos/:id", rutasProtegidas, (req, res) => {
 
 /**
  * @swagger
- * /cancelar/pedidos/{id}:
+ * /cancelar/{id1}/pedidos/{id}:
  *  put:
  *      summary: Cancel order
  *      description: It changes the status of the order to cancelled by user (7). 
@@ -813,6 +813,8 @@ app.delete("/pedidos/:id", rutasProtegidas, (req, res) => {
  *              description: Pedido anulado/cliente.
  *          "201":
  *              description: Por favor, inicie sesion.
+ *          "202":
+ *              description: No puede cancelar pedidos de terceros.
  *          "404": 
  *              description: El pedido no existe
  *      security: [
@@ -823,22 +825,28 @@ app.delete("/pedidos/:id", rutasProtegidas, (req, res) => {
  */
 
 
-app.put("/cancelar/pedidos/:id", rutasProtegidas, (req, res) => {
+app.put("/cancelar/:id1/pedidos/:id", rutasProtegidas, (req, res) => {
     let { id } = req.params;
+    let { id1 } = req.params;
     let sql = `UPDATE pedidos SET estado = '7' WHERE id = '${id}'`;
     let sql1 = `SELECT * FROM pedidos WHERE Id = '${id}'`;
-    if (connection.query(sql1, (error, resp) => {
-        if (error) { res.send(error) }
-        if (resp.length !== 1) {
-            res.status(404).send("El pedido no existe");
-        }
-        else {
-            connection.query(sql, error => {
-                if (error) throw error;
-                else { res.send("Pedido anulado/cliente."); }
-            });
-        }
-    }));
+    if (req.headers['userId'] != id1) {
+        res.status(202).send("No puede cancelar pedidos de terceros.");
+    }
+    else {
+        if (connection.query(sql1, (error, resp) => {
+            if (error) { res.send(error) }
+            if (resp.length !== 1) {
+                res.status(404).send("El pedido no existe");
+            }
+            else {
+                connection.query(sql, error => {
+                    if (error) throw error;
+                    else { res.send("Pedido anulado/cliente."); }
+                });
+            }
+        }));
+    }
 }
 );
 
